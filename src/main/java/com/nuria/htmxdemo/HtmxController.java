@@ -1,9 +1,15 @@
 package com.nuria.htmxdemo;
 
+import com.nuria.htmxdemo.model.CaseNotification;
+import com.nuria.htmxdemo.model.CountryMessage;
+import com.nuria.htmxdemo.service.ProcessorCases;
 import io.github.wimdeblauwe.hsbt.mvc.HtmxRequest;
 import io.github.wimdeblauwe.hsbt.mvc.HxRequest;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -44,11 +50,26 @@ public class HtmxController {
                 "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia",
                 "Norway");
         countries = countries.stream()
-                .filter(country -> country.toLowerCase().contains(searchText))
+                .filter(country -> country.toLowerCase().contains(searchText.toLowerCase()))
                 .collect(Collectors.toList());
         model.addAttribute("countries", countries);
         return "search-results";
     }
 
+    @MessageMapping("/sendCountryNotification")
+    @SendTo("/topic/notifications")
+    public CaseNotification greeting(CountryMessage countryMessage) throws Exception {
+        Thread.sleep(1000); // simulated delay
+        return new ProcessorCases(countryMessage.country()).process();
+    }
 
+    @GetMapping("/htmx-socket")
+    public String showSocket() {
+        return "htmx-socket";
+    }
+
+    @GetMapping("/search-countries")
+    public String showSearchCountries() {
+        return "search-countries";
+    }
 }
